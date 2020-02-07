@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 import requests
 
+
 def fetch_url(url):
     try:
         resp = requests.get(url)
@@ -17,10 +18,34 @@ def fetch_url(url):
 
     return resp.text
 
+
+def get_songs_links(resptext):
+    soup = BeautifulSoup(resptext, 'html.parser')
+    arr_links = []
+    for link in soup.findAll("a", {"class": "u-display_block"}):
+        arr_links.append(link.get('href'))
+
+    if len(arr_links) == 0:
+        return 0
+    else:
+        return arr_links
+
+
+def get_texts(links):
+    for url in links:
+        page = fetch_url(url)
+        soup = BeautifulSoup(page, 'html.parser')
+        text = soup.find("div", {"class": "lyrics"})
+        print(text)
+
+
 def func():
     page = fetch_url("https://genius.com/albums/Mac-miller/Swimming")
-    print(page)
+    links = get_songs_links(page)
+    texts = get_texts(links)
+
+    # print(links)
 
 
 if __name__ == "__main__":
-	func()
+    func()
