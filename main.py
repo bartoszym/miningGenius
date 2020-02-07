@@ -35,7 +35,7 @@ def get_texts(links):
     for url in links:
         page = fetch_url(url)
         soup = BeautifulSoup(page, 'html.parser')
-        text = soup.find("div", {"class": "lyrics"})
+        text = soup.find("div", {"class": "lyrics"}).get_text()
         print(text)
 
 
