@@ -18,7 +18,7 @@ def fetch_url(url):
     return resp.text
 
 def func():
-    page = fetch_url("https://genius.com/artists/Mac-miller")
+    page = fetch_url("https://genius.com/albums/Mac-miller/Swimming")
     print(page)
 
 
