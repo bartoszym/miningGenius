@@ -32,17 +32,21 @@ def get_songs_links(resptext):
 
 
 def get_texts(links):
+    texts = []
     for url in links:
         page = fetch_url(url)
         soup = BeautifulSoup(page, 'html.parser')
         text = soup.find("div", {"class": "lyrics"}).get_text()
-        print(text)
+        texts.append(text)
+
+    return texts
 
 
 def func():
     page = fetch_url("https://genius.com/albums/Mac-miller/Swimming")
     links = get_songs_links(page)
     texts = get_texts(links)
+    print(texts)
 
     # print(links)
 
