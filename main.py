@@ -1,6 +1,6 @@
 from bs4 import BeautifulSoup
 import requests
-
+import re
 
 def fetch_url(url):
     try:
@@ -42,11 +42,22 @@ def get_texts(links):
     return texts
 
 
+def delete_square_bracket(texts):
+    new_texts = []
+    for text in texts:
+        text = re.sub(r'\[.*\]', '', text)
+        new_texts.append(text)
+
+    return new_texts
+
 def func():
     page = fetch_url("https://genius.com/albums/Mac-miller/Swimming")
     links = get_songs_links(page)
     texts = get_texts(links)
-    print(texts)
+    texts = delete_square_bracket(texts)
+    for text in texts:
+        print(text)
+
 
     # print(links)
 
