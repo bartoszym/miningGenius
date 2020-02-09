@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 import requests
 import re
+from nltk.stem.snowball import EnglishStemmer
 
 def fetch_url(url):
     try:
@@ -50,13 +51,24 @@ def delete_square_bracket(texts):
 
     return new_texts
 
+
+def preprocessing(texts):
+    texts = delete_square_bracket(texts)
+    eng_stemmer = EnglishStemmer(ignore_stopwords=True)
+    for i in range(len(texts)):
+        text = texts[i]
+        stemmed = ' '.join([eng_stemmer.stem(word) for word in text.split(" ")])
+        texts[i] = stemmed
+        print(stemmed)
+
+
 def func():
     page = fetch_url("https://genius.com/albums/Mac-miller/Swimming")
     links = get_songs_links(page)
     texts = get_texts(links)
-    texts = delete_square_bracket(texts)
-    for text in texts:
-        print(text)
+    preprocessing(texts)
+    # for text in texts:
+    #     print(text)
 
 
     # print(links)
