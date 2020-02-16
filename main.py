@@ -1,6 +1,11 @@
 from bs4 import BeautifulSoup
 import requests
 import re
+from nltk.stem.snowball import EnglishStemmer
+from nltk.tokenize import RegexpTokenizer
+from nltk.lm.preprocessing import padded_everygram_pipeline
+from nltk.lm import MLE
+
 
 def fetch_url(url):
     try:
@@ -50,13 +55,47 @@ def delete_square_bracket(texts):
 
     return new_texts
 
+
+def stemming(texts):
+    eng_stemmer = EnglishStemmer(ignore_stopwords=True)
+    for i in range(len(texts)):
+        text = texts[i]
+        stemmed = ' '.join([eng_stemmer.stem(word) for word in text.split(" ")])
+        texts[i] = stemmed
+        # print(stemmed)
+
+
+def preprocessing(texts):
+    texts = delete_square_bracket(texts)
+    tokenizer = RegexpTokenizer(r'\w+')
+    tokenized_texts = []
+    for text in texts:
+        text = text.lower()
+        tokenized_texts.append(tokenizer.tokenize(text))
+    # stemming(texts)
+
+    return tokenized_texts
+
+
 def func():
     page = fetch_url("https://genius.com/albums/Mac-miller/Swimming")
     links = get_songs_links(page)
     texts = get_texts(links)
-    texts = delete_square_bracket(texts)
-    for text in texts:
-        print(text)
+    texts = preprocessing(texts)
+    # for text in texts:
+    #     print(text)
+
+    ngram_length = 3
+    train_texts, vocab_texts = padded_everygram_pipeline(ngram_length, texts)
+    mac_model = MLE(ngram_length)
+    mac_model.fit(train_texts, vocab_texts)
+    generated_text = mac_model.generate(num_words=15)
+    print(generated_text)
+
+    generated_text = mac_model.generate(num_words=15)
+    print(generated_text)
+    # for text in texts:
+    #     print(text)
 
 
     # print(links)
