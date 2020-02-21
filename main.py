@@ -7,9 +7,12 @@ from nltk.lm.preprocessing import padded_everygram_pipeline
 from nltk.lm import MLE
 
 
-def fetch_url(url):
+def fetch_url(url, *headers):
     try:
-        resp = requests.get(url)
+        if headers:
+            resp = requests.get(url, headers=headers[0])
+        else:
+            resp = requests.get(url)
     except requests.exceptions.MissingSchema:
         return "Wrong URL, maybe missed 'http://'"
 
@@ -21,7 +24,24 @@ def fetch_url(url):
         if 500 <= err.response.status_code < 600:
             return 'Server error'
 
-    return resp.text
+    return resp
+
+
+def request_songs_urls(artist_number):
+    base_url = 'https://api.genius.com'
+    headers = {'Authorization': 'Bearer ' + 'ng7AckqnHLgmtcr1cW-Mk1qvngwnBzBUeAJszvm048jR4mV8z0vEsHRCz2o7RiHY'}
+    number_of_songs = 30
+    search_url = base_url + '/artists/'+str(artist_number)+'/songs?per_page={}'.format(number_of_songs)
+    print(search_url)
+    response = fetch_url(search_url, headers)
+
+    data = response.json()
+    data = data['response']['songs']
+    links = []
+    for url in data:
+        links.append(url['url'])
+
+    return links
 
 
 def get_songs_links(resptext):
@@ -78,24 +98,27 @@ def preprocessing(texts):
 
 
 def func():
-    page = fetch_url("https://genius.com/albums/Mac-miller/Swimming")
-    links = get_songs_links(page)
-    texts = get_texts(links)
-    texts = preprocessing(texts)
-    # for text in texts:
-    #     print(text)
+    links = request_songs_urls(16775)
 
-    ngram_length = 3
-    train_texts, vocab_texts = padded_everygram_pipeline(ngram_length, texts)
-    mac_model = MLE(ngram_length)
-    mac_model.fit(train_texts, vocab_texts)
-    generated_text = mac_model.generate(num_words=15)
-    print(generated_text)
-
-    generated_text = mac_model.generate(num_words=15)
-    print(generated_text)
-    # for text in texts:
-    #     print(text)
+    print(links)
+    # page = fetch_url("https://genius.com/albums/Mac-miller/Swimming")
+    # links = get_songs_links(page)
+    # texts = get_texts(links)
+    # texts = preprocessing(texts)
+    # # for text in texts:
+    # #     print(text)
+    #
+    # ngram_length = 3
+    # train_texts, vocab_texts = padded_everygram_pipeline(ngram_length, texts)
+    # mac_model = MLE(ngram_length)
+    # mac_model.fit(train_texts, vocab_texts)
+    # generated_text = mac_model.generate(num_words=15)
+    # print(generated_text)
+    #
+    # generated_text = mac_model.generate(num_words=15)
+    # print(generated_text)
+    # # for text in texts:
+    # #     print(text)
 
 
     # print(links)
