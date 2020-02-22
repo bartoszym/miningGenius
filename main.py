@@ -27,11 +27,21 @@ def fetch_url(url, *headers):
     return resp
 
 
+def search_for_artist(artist):
+    base_url = 'https://api.genius.com'
+    headers = {'Authorization': 'Bearer '
+                                + 'ng7AckqnHLgmtcr1cW-Mk1qvngwnBzBUeAJszvm048jR4mV8z0vEsHRCz2o7RiHY'}
+    search_url = base_url + '/search?q=' + artist
+    response = fetch_url(search_url, headers)
+    response = response.json()
+    return(response['response']['hits'][0]['result']['primary_artist']['api_path'])
+
+
 def request_songs_id(artist_number, amount_songs):
     base_url = 'https://api.genius.com'
     headers = {'Authorization': 'Bearer '
                                 + 'ng7AckqnHLgmtcr1cW-Mk1qvngwnBzBUeAJszvm048jR4mV8z0vEsHRCz2o7RiHY'}
-    search_url = base_url + '/artists/' + str(artist_number) + '/songs?per_page={}'.format(amount_songs)
+    search_url = base_url + str(artist_number) + '/songs?per_page={}'.format(amount_songs)
     response = fetch_url(search_url, headers)
 
     data = response.json()
@@ -92,26 +102,26 @@ def preprocessing(texts):
 
 
 def func():
-    ids = request_songs_id(72, 50)
+    artist_url = search_for_artist('Mac Miller')
+    ids = request_songs_id(artist_url, 10)
 
     texts = request_text(ids)
+    for text in texts:
+        print(text)
+    #
+    # texts = preprocessing(texts)
+    #
+    # ngram_length = 3
+    # train_texts, vocab_texts = padded_everygram_pipeline(ngram_length, texts)
+    # mac_model = MLE(ngram_length)
+    # mac_model.fit(train_texts, vocab_texts)
+    # generated_text = mac_model.generate(num_words=15)
+    # print(generated_text)
+    #
+    # generated_text = mac_model.generate(num_words=15)
+    # print(generated_text)
 
-    texts = preprocessing(texts)
 
-    ngram_length = 3
-    train_texts, vocab_texts = padded_everygram_pipeline(ngram_length, texts)
-    mac_model = MLE(ngram_length)
-    mac_model.fit(train_texts, vocab_texts)
-    generated_text = mac_model.generate(num_words=15)
-    print(generated_text)
-
-    generated_text = mac_model.generate(num_words=15)
-    print(generated_text)
-    # for text in texts:
-    #     print(text)
-
-
-    # print(links)
 
 
 if __name__ == "__main__":
