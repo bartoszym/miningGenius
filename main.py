@@ -95,12 +95,8 @@ def func():
     ids = request_songs_id(72, 50)
 
     texts = request_text(ids)
-    # for text in texts:
-    #     print(text)
 
     texts = preprocessing(texts)
-    # for text in texts:
-    #     print(text)
 
     ngram_length = 3
     train_texts, vocab_texts = padded_everygram_pipeline(ngram_length, texts)
