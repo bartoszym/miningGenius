@@ -27,44 +27,38 @@ def fetch_url(url, *headers):
     return resp
 
 
-def request_songs_urls(artist_number):
+def request_songs_id(artist_number, amount_songs):
     base_url = 'https://api.genius.com'
-    headers = {'Authorization': 'Bearer ' + 'ng7AckqnHLgmtcr1cW-Mk1qvngwnBzBUeAJszvm048jR4mV8z0vEsHRCz2o7RiHY'}
-    number_of_songs = 30
-    search_url = base_url + '/artists/'+str(artist_number)+'/songs?per_page={}'.format(number_of_songs)
-    print(search_url)
+    headers = {'Authorization': 'Bearer '
+                                + 'ng7AckqnHLgmtcr1cW-Mk1qvngwnBzBUeAJszvm048jR4mV8z0vEsHRCz2o7RiHY'}
+    search_url = base_url + '/artists/' + str(artist_number) + '/songs?per_page={}'.format(amount_songs)
     response = fetch_url(search_url, headers)
 
     data = response.json()
     data = data['response']['songs']
-    links = []
+    songs_ids = []
     for url in data:
-        links.append(url['url'])
+        songs_ids.append(url['id'])
 
-    return links
-
-
-def get_songs_links(resptext):
-    soup = BeautifulSoup(resptext, 'html.parser')
-    arr_links = []
-    for link in soup.findAll("a", {"class": "u-display_block"}):
-        arr_links.append(link.get('href'))
-
-    if len(arr_links) == 0:
-        return 0
-    else:
-        return arr_links
+    return songs_ids
 
 
-def get_texts(links):
+def request_text(ids):
+    base_url = 'https://genius.com'
     texts = []
-    for url in links:
-        page = fetch_url(url)
-        soup = BeautifulSoup(page, 'html.parser')
-        text = soup.find("div", {"class": "lyrics"}).get_text()
-        texts.append(text)
+    for song_id in ids:
+        song_url = base_url + '/songs/' + str(song_id)
+        response = fetch_url(song_url)
+        texts.append(get_lyrics(response))
 
     return texts
+
+
+def get_lyrics(page):
+    soup = BeautifulSoup(page.text, 'html.parser')
+    text = soup.find("div", {"class": "lyrics"}).get_text()
+
+    return text
 
 
 def delete_square_bracket(texts):
@@ -98,27 +92,27 @@ def preprocessing(texts):
 
 
 def func():
-    links = request_songs_urls(16775)
+    ids = request_songs_id(72, 50)
 
-    print(links)
-    # page = fetch_url("https://genius.com/albums/Mac-miller/Swimming")
-    # links = get_songs_links(page)
-    # texts = get_texts(links)
-    # texts = preprocessing(texts)
-    # # for text in texts:
-    # #     print(text)
-    #
-    # ngram_length = 3
-    # train_texts, vocab_texts = padded_everygram_pipeline(ngram_length, texts)
-    # mac_model = MLE(ngram_length)
-    # mac_model.fit(train_texts, vocab_texts)
-    # generated_text = mac_model.generate(num_words=15)
-    # print(generated_text)
-    #
-    # generated_text = mac_model.generate(num_words=15)
-    # print(generated_text)
-    # # for text in texts:
-    # #     print(text)
+    texts = request_text(ids)
+    # for text in texts:
+    #     print(text)
+
+    texts = preprocessing(texts)
+    # for text in texts:
+    #     print(text)
+
+    ngram_length = 3
+    train_texts, vocab_texts = padded_everygram_pipeline(ngram_length, texts)
+    mac_model = MLE(ngram_length)
+    mac_model.fit(train_texts, vocab_texts)
+    generated_text = mac_model.generate(num_words=15)
+    print(generated_text)
+
+    generated_text = mac_model.generate(num_words=15)
+    print(generated_text)
+    # for text in texts:
+    #     print(text)
 
 
     # print(links)
