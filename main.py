@@ -7,9 +7,12 @@ from nltk.lm.preprocessing import padded_everygram_pipeline
 from nltk.lm import MLE
 
 
-def fetch_url(url):
+def fetch_url(url, *headers):
     try:
-        resp = requests.get(url)
+        if headers:
+            resp = requests.get(url, headers=headers[0])
+        else:
+            resp = requests.get(url)
     except requests.exceptions.MissingSchema:
         return "Wrong URL, maybe missed 'http://'"
 
@@ -21,30 +24,51 @@ def fetch_url(url):
         if 500 <= err.response.status_code < 600:
             return 'Server error'
 
-    return resp.text
+    return resp
 
 
-def get_songs_links(resptext):
-    soup = BeautifulSoup(resptext, 'html.parser')
-    arr_links = []
-    for link in soup.findAll("a", {"class": "u-display_block"}):
-        arr_links.append(link.get('href'))
-
-    if len(arr_links) == 0:
-        return 0
-    else:
-        return arr_links
+def search_for_artist(artist):
+    base_url = 'https://api.genius.com'
+    headers = {'Authorization': 'Bearer '
+                                + 'ng7AckqnHLgmtcr1cW-Mk1qvngwnBzBUeAJszvm048jR4mV8z0vEsHRCz2o7RiHY'}
+    search_url = base_url + '/search?q=' + artist
+    response = fetch_url(search_url, headers)
+    response = response.json()
+    return(response['response']['hits'][0]['result']['primary_artist']['api_path'])
 
 
-def get_texts(links):
+def request_songs_id(artist_number, amount_songs):
+    base_url = 'https://api.genius.com'
+    headers = {'Authorization': 'Bearer '
+                                + 'ng7AckqnHLgmtcr1cW-Mk1qvngwnBzBUeAJszvm048jR4mV8z0vEsHRCz2o7RiHY'}
+    search_url = base_url + str(artist_number) + '/songs?per_page={}'.format(amount_songs)
+    response = fetch_url(search_url, headers)
+
+    data = response.json()
+    data = data['response']['songs']
+    songs_ids = []
+    for url in data:
+        songs_ids.append(url['id'])
+
+    return songs_ids
+
+
+def request_text(ids):
+    base_url = 'https://genius.com'
     texts = []
-    for url in links:
-        page = fetch_url(url)
-        soup = BeautifulSoup(page, 'html.parser')
-        text = soup.find("div", {"class": "lyrics"}).get_text()
-        texts.append(text)
+    for song_id in ids:
+        song_url = base_url + '/songs/' + str(song_id)
+        response = fetch_url(song_url)
+        texts.append(get_lyrics(response))
 
     return texts
+
+
+def get_lyrics(page):
+    soup = BeautifulSoup(page.text, 'html.parser')
+    text = soup.find("div", {"class": "lyrics"}).get_text()
+
+    return text
 
 
 def delete_square_bracket(texts):
@@ -78,27 +102,26 @@ def preprocessing(texts):
 
 
 def func():
-    page = fetch_url("https://genius.com/albums/Mac-miller/Swimming")
-    links = get_songs_links(page)
-    texts = get_texts(links)
-    texts = preprocessing(texts)
-    # for text in texts:
-    #     print(text)
+    artist_url = search_for_artist('Mac Miller')
+    ids = request_songs_id(artist_url, 10)
 
-    ngram_length = 3
-    train_texts, vocab_texts = padded_everygram_pipeline(ngram_length, texts)
-    mac_model = MLE(ngram_length)
-    mac_model.fit(train_texts, vocab_texts)
-    generated_text = mac_model.generate(num_words=15)
-    print(generated_text)
+    texts = request_text(ids)
+    for text in texts:
+        print(text)
+    #
+    # texts = preprocessing(texts)
+    #
+    # ngram_length = 3
+    # train_texts, vocab_texts = padded_everygram_pipeline(ngram_length, texts)
+    # mac_model = MLE(ngram_length)
+    # mac_model.fit(train_texts, vocab_texts)
+    # generated_text = mac_model.generate(num_words=15)
+    # print(generated_text)
+    #
+    # generated_text = mac_model.generate(num_words=15)
+    # print(generated_text)
 
-    generated_text = mac_model.generate(num_words=15)
-    print(generated_text)
-    # for text in texts:
-    #     print(text)
 
-
-    # print(links)
 
 
 if __name__ == "__main__":
