@@ -7,12 +7,10 @@ from nltk.lm.preprocessing import padded_everygram_pipeline
 from nltk.lm import MLE
 
 
-def fetch_url(url, *headers):
+def fetch_url(url, headers=None, params=None):
+    '''Fetches url and returns response'''
     try:
-        if headers:
-            resp = requests.get(url, headers=headers[0])
-        else:
-            resp = requests.get(url)
+        resp = requests.get(url, headers=headers, params=params)
     except requests.exceptions.MissingSchema:
         return "Wrong URL, maybe missed 'http://'"
 
@@ -28,6 +26,7 @@ def fetch_url(url, *headers):
 
 
 def search_for_artist(artist):
+    '''Finds url of artist'''
     base_url = 'https://api.genius.com'
     headers = {'Authorization': 'Bearer '
                                 + 'ng7AckqnHLgmtcr1cW-Mk1qvngwnBzBUeAJszvm048jR4mV8z0vEsHRCz2o7RiHY'}
@@ -38,28 +37,45 @@ def search_for_artist(artist):
 
 
 def request_songs_id(artist_number, amount_songs):
+    '''Returns songs ids of artist'''
+    songs_ids = []
     base_url = 'https://api.genius.com'
     headers = {'Authorization': 'Bearer '
                                 + 'ng7AckqnHLgmtcr1cW-Mk1qvngwnBzBUeAJszvm048jR4mV8z0vEsHRCz2o7RiHY'}
     search_url = base_url + str(artist_number) + '/songs?per_page={}'.format(amount_songs)
-    response = fetch_url(search_url, headers)
 
-    data = response.json()
-    data = data['response']['songs']
-    songs_ids = []
-    for url in data:
-        songs_ids.append(url['id'])
+    i = 0
+    page = 1
+    not_enough = 1
+    while not_enough:
+        params = {'page': page}
+        response = fetch_url(search_url, headers=headers, params=params)
+
+        data = response.json()
+        data = data['response']['songs']
+        for song in data:
+            if song['primary_artist']['api_path'] == artist_number:
+                songs_ids.append(song['id'])
+                i += 1
+        if i >= 170:
+            not_enough = 0
+        page += 1
 
     return songs_ids
 
 
 def request_text(ids):
+    '''Creates array of texts'''
     base_url = 'https://genius.com'
     texts = []
+    i = 0
     for song_id in ids:
         song_url = base_url + '/songs/' + str(song_id)
         response = fetch_url(song_url)
         texts.append(get_lyrics(response))
+        i += 1
+        if i % 10 == 0:
+            print('I scrapped {} texts'.format(i))
 
     return texts
 
@@ -86,7 +102,6 @@ def stemming(texts):
         text = texts[i]
         stemmed = ' '.join([eng_stemmer.stem(word) for word in text.split(" ")])
         texts[i] = stemmed
-        # print(stemmed)
 
 
 def preprocessing(texts):
@@ -102,25 +117,21 @@ def preprocessing(texts):
 
 
 def func():
-    artist_url = search_for_artist('Mac Miller')
-    ids = request_songs_id(artist_url, 10)
+    artist_url = search_for_artist('Ten Typ Mes')
+    ids = request_songs_id(artist_url, 50)
 
     texts = request_text(ids)
     for text in texts:
         print(text)
-    #
-    # texts = preprocessing(texts)
-    #
-    # ngram_length = 3
-    # train_texts, vocab_texts = padded_everygram_pipeline(ngram_length, texts)
-    # mac_model = MLE(ngram_length)
-    # mac_model.fit(train_texts, vocab_texts)
-    # generated_text = mac_model.generate(num_words=15)
-    # print(generated_text)
-    #
-    # generated_text = mac_model.generate(num_words=15)
-    # print(generated_text)
 
+    texts = preprocessing(texts)
+
+    ngram_length = 3
+    train_texts, vocab_texts = padded_everygram_pipeline(ngram_length, texts)
+    mac_model = MLE(ngram_length)
+    mac_model.fit(train_texts, vocab_texts)
+    generated_text = mac_model.generate(num_words=30)
+    print(generated_text)
 
 
 
