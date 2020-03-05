@@ -36,13 +36,13 @@ def search_for_artist(artist):
     return(response['response']['hits'][0]['result']['primary_artist']['api_path'])
 
 
-def request_songs_id(artist_number, amount_songs):
+def request_songs_id(artist_url):
     '''Returns songs ids of artist'''
     songs_ids = []
     base_url = 'https://api.genius.com'
     headers = {'Authorization': 'Bearer '
                                 + 'ng7AckqnHLgmtcr1cW-Mk1qvngwnBzBUeAJszvm048jR4mV8z0vEsHRCz2o7RiHY'}
-    search_url = base_url + str(artist_number) + '/songs?per_page={}'.format(amount_songs)
+    search_url = base_url + str(artist_url) + '/songs'
 
     i = 0
     page = 1
@@ -54,7 +54,7 @@ def request_songs_id(artist_number, amount_songs):
         data = response.json()
         data = data['response']['songs']
         for song in data:
-            if song['primary_artist']['api_path'] == artist_number:
+            if song['primary_artist']['api_path'] == artist_url:
                 songs_ids.append(song['id'])
                 i += 1
         if i >= 170:
@@ -90,7 +90,7 @@ def get_lyrics(page):
 def delete_square_bracket(texts):
     new_texts = []
     for text in texts:
-        text = re.sub(r'\[.*\]', '', text)
+        text = re.split(r'\[.*\]', text)
         new_texts.append(text)
 
     return new_texts
@@ -109,30 +109,40 @@ def preprocessing(texts):
     tokenizer = RegexpTokenizer(r'\w+')
     tokenized_texts = []
     for text in texts:
-        text = text.lower()
-        tokenized_texts.append(tokenizer.tokenize(text))
+        for verse in text:
+            verse = verse.lower()
+            tokenized_texts.append(tokenizer.tokenize(verse))
     # stemming(texts)
 
     return tokenized_texts
 
 
 def func():
-    artist_url = search_for_artist('Ten Typ Mes')
-    ids = request_songs_id(artist_url, 50)
+    artist = input("Enter artist's name: ")
+    text_seed = input("Enter word with which you want the phrase to start: ")
+
+    artist_url = search_for_artist(artist)
+    ids = request_songs_id(artist_url)
 
     texts = request_text(ids)
-    for text in texts:
-        print(text)
 
     texts = preprocessing(texts)
 
     ngram_length = 3
     train_texts, vocab_texts = padded_everygram_pipeline(ngram_length, texts)
-    mac_model = MLE(ngram_length)
-    mac_model.fit(train_texts, vocab_texts)
-    generated_text = mac_model.generate(num_words=30)
-    print(generated_text)
+    model = MLE(ngram_length)
+    model.fit(train_texts, vocab_texts)
+    generated_text = []
+    for word in model.generate(num_words=100, text_seed=text_seed):
+        if word == '<s>':
+            continue
+        if word == '</s>':
+            break
+        generated_text.append(word)
 
+    print(text_seed, end=' ')
+    for word in generated_text:
+        print(word, end=' ')
 
 
 if __name__ == "__main__":
