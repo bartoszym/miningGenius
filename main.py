@@ -42,7 +42,7 @@ def request_songs_id(artist_number, amount_songs):
     base_url = 'https://api.genius.com'
     headers = {'Authorization': 'Bearer '
                                 + 'ng7AckqnHLgmtcr1cW-Mk1qvngwnBzBUeAJszvm048jR4mV8z0vEsHRCz2o7RiHY'}
-    search_url = base_url + str(artist_number) + '/songs?per_page={}'.format(amount_songs)
+    search_url = base_url + str(artist_number) + '/songs'
 
     i = 0
     page = 1
@@ -90,7 +90,7 @@ def get_lyrics(page):
 def delete_square_bracket(texts):
     new_texts = []
     for text in texts:
-        text = re.sub(r'\[.*\]', '', text)
+        text = re.split(r'\[.*\]', text)
         new_texts.append(text)
 
     return new_texts
@@ -109,29 +109,30 @@ def preprocessing(texts):
     tokenizer = RegexpTokenizer(r'\w+')
     tokenized_texts = []
     for text in texts:
-        text = text.lower()
-        tokenized_texts.append(tokenizer.tokenize(text))
+        for verse in text:
+            verse = verse.lower()
+            tokenized_texts.append(tokenizer.tokenize(verse))
     # stemming(texts)
 
     return tokenized_texts
 
 
 def func():
-    artist_url = search_for_artist('Ten Typ Mes')
+    artist_url = search_for_artist('Mac Miller')
     ids = request_songs_id(artist_url, 50)
 
     texts = request_text(ids)
+
+    texts = preprocessing(texts)
     for text in texts:
         print(text)
 
-    texts = preprocessing(texts)
-
-    ngram_length = 3
-    train_texts, vocab_texts = padded_everygram_pipeline(ngram_length, texts)
-    mac_model = MLE(ngram_length)
-    mac_model.fit(train_texts, vocab_texts)
-    generated_text = mac_model.generate(num_words=30)
-    print(generated_text)
+    # ngram_length = 3
+    # train_texts, vocab_texts = padded_everygram_pipeline(ngram_length, texts)
+    # model = MLE(ngram_length)
+    # model.fit(train_texts, vocab_texts)
+    # generated_text = model.generate(num_words=30)
+    # print(generated_text)
 
 
 
