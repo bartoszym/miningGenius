@@ -11,3 +11,6 @@ Install required packages with `pip install -r requirements.txt`
 
 ## Starting
 Begin with  launch ```main.py``` and follow with instructions. 
+
+## Coming soon
+I want to add some function with frequent words, but don't have idea for this yet :grin:
